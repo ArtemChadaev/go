@@ -12,6 +12,7 @@ const (
 	userCtx            = "userId"
 )
 
+// TODO: Проверка access токена посмотреть мб переделать
 func (h *Handler) userIdentify(c *gin.Context) {
 	header := c.GetHeader(autorizationHeader)
 	if header == "" {

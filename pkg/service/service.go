@@ -7,8 +7,11 @@ import (
 
 type Autorization interface {
 	CreateUser(user rest.User) (int, error)
-	GenerateToken(email, password string) (string, error)
-	ParseToken(token string) (int, error)
+	GenerateTokens(email, password string) (tokens rest.ResponseTokens, err error)
+	GetAccessToken(refreshToken string) (tokens rest.ResponseTokens, err error)
+	ParseToken(accessToken string) (int, error)
+	UnAuthorize(refreshToken string) error
+	UnAuthorizeAll(email, password string) error
 }
 
 type Service struct {

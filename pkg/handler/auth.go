@@ -15,13 +15,20 @@ func (h *Handler) signUp(c *gin.Context) {
 		return
 	}
 
-	id, err := h.services.Autorization.CreateUser(input)
+	_, err := h.services.Autorization.CreateUser(input)
 	if err != nil {
+		//if errors.Is(err, rest.ErrUserAlreadyExists) {
+		//}
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, map[string]interface{}{"id": id})
+	tokens, err := h.services.GenerateTokens(input.Email, input.Password)
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, map[string]interface{}{"accessToken": tokens.AccessToken, "refreshToken": tokens.RefreshToken})
 }
 
 func (h *Handler) signIn(c *gin.Context) {
@@ -32,11 +39,11 @@ func (h *Handler) signIn(c *gin.Context) {
 		return
 	}
 
-	token, err := h.services.Autorization.GenerateToken(input.Email, input.Password)
+	tokens, err := h.services.Autorization.GenerateTokens(input.Email, input.Password)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, map[string]interface{}{"token": token})
+	c.JSON(http.StatusOK, map[string]interface{}{"accessToken": tokens.AccessToken, "refreshToken": tokens.RefreshToken})
 }
