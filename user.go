@@ -3,8 +3,8 @@ package rest
 import "time"
 
 type ResponseTokens struct {
-	AccessToken  string
-	RefreshToken string
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
 }
 type User struct {
 	Id       int    `json:"-" db:"id"`
