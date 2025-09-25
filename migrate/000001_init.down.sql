@@ -1,5 +1,5 @@
 DROP TABLE items;
-DROP TABLE card;
+DROP TABLE cards;
 DROP TABLE clan_role_names;
 DROP TABLE roles;
 DROP TABLE clan_members;

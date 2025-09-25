@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"net/http"
 	"strings"
 
+	"github.com/ChadaevArtem/rest-go-for-vue"
 	"github.com/gin-gonic/gin"
 )
 
@@ -16,18 +16,19 @@ const (
 func (h *Handler) userIdentify(c *gin.Context) {
 	header := c.GetHeader(autorizationHeader)
 	if header == "" {
-		newErrorResponse(c, http.StatusUnauthorized, "empty auth header")
+		handleError(c, rest.ErrInvalidToken)
+		return
 	}
 
 	headerParts := strings.Split(header, " ")
 	if len(headerParts) != 2 {
-		newErrorResponse(c, http.StatusUnauthorized, "invalid auth header")
+		handleError(c, rest.ErrInvalidToken)
 		return
 	}
 
 	userId, err := h.services.Autorization.ParseToken(headerParts[1])
 	if err != nil {
-		newErrorResponse(c, http.StatusUnauthorized, err.Error())
+		handleError(c, err) // Сервис уже вернет правильный rest.ErrInvalidToken
 		return
 	}
 

@@ -3,6 +3,7 @@ package service
 import (
 	"crypto/rand"
 	"crypto/sha1"
+	"database/sql"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -43,7 +44,6 @@ func generatePasswordHash(password string) string {
 }
 
 func generateRefreshToken() (string, error) {
-	// 32 байта — это хорошая длина для безопасного токена.
 	tokenBytes := make([]byte, 32)
 	_, err := rand.Read(tokenBytes)
 	if err != nil {
@@ -76,6 +76,7 @@ func (s *AuthService) CreateUser(user rest.User) (int, error) {
 		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
 			return 0, rest.ErrUserAlreadyExists
 		}
+		return 0, rest.NewInternalServerError(err)
 	}
 	return id, nil
 }
@@ -83,7 +84,12 @@ func (s *AuthService) CreateUser(user rest.User) (int, error) {
 func (s *AuthService) GenerateTokens(email, password string) (tokens rest.ResponseTokens, err error) {
 	userId, err := s.repo.GetUser(email, generatePasswordHash(password))
 	if err != nil {
-		return
+		// Если пользователь не найден - это ошибка неверных учетных данных.
+		if errors.Is(err, sql.ErrNoRows) {
+			return tokens, rest.ErrInvalidCredentials
+		}
+		// Иначе - внутренняя ошибка.
+		return tokens, rest.NewInternalServerError(err)
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
@@ -96,16 +102,16 @@ func (s *AuthService) GenerateTokens(email, password string) (tokens rest.Respon
 
 	accessToken, err := token.SignedString([]byte(signingKey))
 	if err != nil {
-		return
+		return tokens, rest.NewInternalServerError(err)
 	}
 
 	refresh, err := GenerateRefresh(userId)
 	if err != nil {
-		return
+		return tokens, rest.NewInternalServerError(err)
 	}
 
 	if err = s.repo.CreateToken(refresh); err != nil {
-		return
+		return tokens, rest.NewInternalServerError(err)
 	}
 
 	tokens = rest.ResponseTokens{
@@ -116,35 +122,44 @@ func (s *AuthService) GenerateTokens(email, password string) (tokens rest.Respon
 }
 
 func (s *AuthService) GetAccessToken(refreshToken string) (tokens rest.ResponseTokens, err error) {
-	userId, err := s.repo.GetUserIdByRefreshToken(refreshToken)
+
+	refresh, err := s.repo.GetRefreshToken(refreshToken)
 	if err != nil {
-		return
+		if errors.Is(err, sql.ErrNoRows) {
+			return tokens, rest.ErrInvalidToken
+		}
+		return tokens, rest.NewInternalServerError(err)
 	}
+
+	if time.Now().After(refresh.ExpiresAt) {
+		_ = s.repo.DeleteRefreshToken(refresh.ID) // Удаляем "мусор" из БД
+		return tokens, rest.ErrInvalidToken
+	}
+
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(accessTokenTTL)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
-		userId,
+		refresh.UserID,
 	})
 
 	accessToken, err := token.SignedString([]byte(signingKey))
 	if err != nil {
-		return
-	}
-
-	refresh, err := s.repo.GetRefreshToken(refreshToken)
-	if err != nil {
-		return
+		return tokens, rest.NewInternalServerError(err)
 	}
 
 	if refresh.ExpiresAt.Before(time.Now().Add(updateRefreshTokenTTL)) {
-		refresh, err = GenerateRefresh(userId)
-		err = s.repo.UpdateToken(refreshToken, refresh)
+		newRefresh, err := GenerateRefresh(refresh.UserID)
 		if err != nil {
-			return
+			return tokens, rest.NewInternalServerError(err)
 		}
+		err = s.repo.UpdateToken(refreshToken, newRefresh)
+		if err != nil {
+			return tokens, rest.NewInternalServerError(err)
+		}
+		refresh.Token = newRefresh.Token
 	}
 
 	tokens = rest.ResponseTokens{
@@ -163,12 +178,12 @@ func (s *AuthService) ParseToken(accessToken string) (int, error) {
 		return []byte(signingKey), nil
 	})
 	if err != nil {
-		return 0, err
+		return 0, rest.ErrInvalidToken
 	}
 	claims, ok := token.Claims.(*tokenClaims)
 
 	if !ok {
-		return 0, errors.New("token claims are not of type *tokenClaims")
+		return 0, rest.ErrInvalidToken
 	}
 
 	return claims.UserId, nil
