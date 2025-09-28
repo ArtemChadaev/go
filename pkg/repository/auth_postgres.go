@@ -43,7 +43,7 @@ func (r *AuthRepository) GetUserEmailFromId(id int) (string, error) {
 
 func (r *AuthRepository) UpdateUserPassword(user rest.User) error {
 	query := "UPDATE users SET password_hash=$1 WHERE id=$2"
-	_, err := r.db.Exec(query, user.Password, user.Id)
+	_, err := r.db.Exec(query, user.Password, user.ID)
 	return err
 }
 

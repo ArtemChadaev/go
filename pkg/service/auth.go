@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/ChadaevArtem/rest-go-for-vue"
@@ -16,10 +17,15 @@ import (
 )
 
 const (
-	salt                  = "asdagedrhftyki518sadf5as8"
-	signingKey            = "awsg8s#@4Sf86DS#$2dF"
-	accessTokenTTL        = time.Minute * 15
-	refreshTokenTTL       = time.Hour * 24 * 365
+	//соль
+	salt = "asdagedrhftyki518sadf5as8"
+	// ключ
+	signingKey = "awsg8s#@4Sf86DS#$2dF"
+	//Время жизни accesToken
+	accessTokenTTL = time.Minute * 15
+	//Время жизни refreshToken
+	refreshTokenTTL = time.Hour * 24 * 365
+	//Время за которое refreshToken обновится
 	updateRefreshTokenTTL = time.Hour * 24 * 90
 )
 
@@ -29,11 +35,15 @@ type tokenClaims struct {
 }
 
 type AuthService struct {
-	repo repository.Autorization
+	repo            repository.Autorization
+	settingsService UserSettings
 }
 
-func NewAuthService(repo repository.Autorization) *AuthService {
-	return &AuthService{repo: repo}
+func NewAuthService(repo repository.Autorization, settingsService UserSettings) *AuthService {
+	return &AuthService{
+		repo:            repo,
+		settingsService: settingsService,
+	}
 }
 
 func generatePasswordHash(password string) string {
@@ -62,8 +72,8 @@ func GenerateRefresh(userId int) (refresh rest.RefreshToken, err error) {
 		UserID:     userId,
 		Token:      refreshToken,
 		ExpiresAt:  time.Now().Add(refreshTokenTTL),
-		NameDevice: "",
-		DeviceInfo: "",
+		NameDevice: nil,
+		DeviceInfo: nil,
 	}
 	return
 }
@@ -76,6 +86,9 @@ func (s *AuthService) CreateUser(user rest.User) (int, error) {
 		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
 			return 0, rest.ErrUserAlreadyExists
 		}
+		return 0, rest.NewInternalServerError(err)
+	}
+	if err := s.settingsService.CreateInitialUserSettings(id, strings.Split(user.Email, "@")[0]); err != nil {
 		return 0, rest.NewInternalServerError(err)
 	}
 	return id, nil
@@ -135,7 +148,6 @@ func (s *AuthService) GetAccessToken(refreshToken string) (tokens rest.ResponseT
 		_ = s.repo.DeleteRefreshToken(refresh.ID) // Удаляем "мусор" из БД
 		return tokens, rest.ErrInvalidToken
 	}
-
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
 		jwt.RegisteredClaims{

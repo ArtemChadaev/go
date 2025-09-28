@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	"github.com/ChadaevArtem/rest-go-for-vue"
 	"github.com/jmoiron/sqlx"
 )
@@ -14,17 +16,27 @@ type Autorization interface {
 	CreateToken(refreshToken rest.RefreshToken) error
 	GetRefreshToken(refreshToken string) (rest.RefreshToken, error)
 	UpdateToken(oldRefreshToken string, refreshToken rest.RefreshToken) error
-	DeleteRefreshToken(token_id int) error
+	DeleteRefreshToken(tokenId int) error
 	DeleteAllUserRefreshTokens(userId int) error
-	GetRefreshTokens(user_id int) ([]rest.RefreshToken, error)
+	GetRefreshTokens(userId int) ([]rest.RefreshToken, error)
+}
+type UserSettings interface {
+	CreateUserSettings(settings rest.UserSettings) error
+	GetUserSettings(userId int) (rest.UserSettings, error)
+	UpdateUserSettings(settings rest.UserSettings) error
+	UpdateUserCoin(userId int, coin int) error
+	BuyPaidSubscription(userId int, time time.Time) error
+	DeactivateExpiredSubscriptions() (int64, error)
 }
 
 type Repository struct {
 	Autorization
+	UserSettings
 }
 
 func NewRepository(db *sqlx.DB) *Repository {
 	return &Repository{
 		Autorization: NewAuthPostgres(db),
+		UserSettings: NewUserSettingsPostgres(db),
 	}
 }

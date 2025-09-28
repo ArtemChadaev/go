@@ -34,12 +34,13 @@ EXECUTE PROCEDURE update_updated_at_column();
 -- Настройки пользователя
 CREATE TABLE user_settings
 (
-    user_id                   INT         NOT NULL,
-    name                      VARCHAR(255),
+    user_id                   INT         NOT NULL UNIQUE,
+    name                      VARCHAR(255) DEFAULT 'Alex',
     icon                      VARCHAR(255),
-    coin                      INT,
-    date_of_registration      TIMESTAMPTZ NOT NULL,
-    paid_subscription         boolean,
+    coin                      INT DEFAULT 0,
+    date_of_registration      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    paid_subscription         boolean DEFAULT FALSE,
+--     Дата ОКОНЧАНИЯ её
     date_of_paid_subscription TIMESTAMPTZ,
     CONSTRAINT user_settings_pk PRIMARY KEY (user_id),
     CONSTRAINT fk_user_settings_user_id

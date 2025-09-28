@@ -6,7 +6,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type Config struct {
+type PostgresConfig struct {
 	Host     string
 	Port     string
 	Username string
@@ -15,7 +15,7 @@ type Config struct {
 	SSLMode  string
 }
 
-func NewPostgresDB(cfg Config) (*sqlx.DB, error) {
+func NewPostgresDB(cfg PostgresConfig) (*sqlx.DB, error) {
 	db, err := sqlx.Open("postgres", fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=%s",
 		cfg.Host, cfg.Port, cfg.Username, cfg.Database, cfg.Password, cfg.SSLMode))
 	if err != nil {

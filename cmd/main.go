@@ -22,7 +22,7 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		logrus.Fatalf(err.Error())
 	}
-	db, err := repository.NewPostgresDB(repository.Config{
+	db, err := repository.NewPostgresDB(repository.PostgresConfig{
 		Host:     viper.GetString("db.host"),
 		Port:     viper.GetString("db.port"),
 		Username: viper.GetString("db.username"),
@@ -33,9 +33,17 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("%s", err.Error())
 	}
+	redis, err := repository.NewRedisClient(repository.RedisConfig{
+		Addr:     viper.GetString("redis.addr"),
+		Password: os.Getenv("REDIS_PASSWORD"),
+		DB:       viper.GetInt("redis.db"),
+	})
+	if err != nil {
+		logrus.Fatalf("%s", err.Error())
+	}
 	repos := repository.NewRepository(db)
-	services := service.NewService(repos)
-	handlers := handler.NewHandler(services)
+	services := service.NewService(repos, redis)
+	handlers := handler.NewHandler(services, redis)
 
 	srv := new(rest.Server)
 	if err := srv.Run(viper.GetString("port"), handlers.InitRoutes()); err != nil {
