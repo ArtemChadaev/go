@@ -3,26 +3,34 @@ name: Main CI/CD
 
 on:
   push:
-    branches: [ "main" ] # Запускаем только для ветки main
+    branches: [ "main" ]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    # Подключаем сервисы, которые будут доступны во время выполнения шагов
-    # В данном случае, это PostgreSQL
     services:
       postgres:
         image: postgres:13
         env:
           POSTGRES_USER: testuser
-          POSTGRES_PASSWORD: ${{secrets.DB_TEST_PASSWORD}}
+          POSTGRES_PASSWORD: testpassword # Используйте простой пароль для тестов
           POSTGRES_DB: testdb
         ports:
           - 5432:5432
-        # Проверка здоровья контейнера. CI не начнет тесты, пока база не будет готова
         options: >-
           --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      # ---> ИСПРАВЛЕНИЕ №1: ДОБАВЛЯЕМ СЕРВИС REDIS <---
+      redis:
+        image: redis:6
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -36,25 +44,31 @@ jobs:
         with:
           go-version: '1.25'
 
-      - name: Install dependencies
-        run: go mod download
+      # ---> ИСПРАВЛЕНИЕ №2: ИСПОЛЬЗУЕМ go mod tidy <---
+      - name: Verify dependencies
+        run: go mod tidy
 
       - name: Run linter
         uses: golangci/golangci-lint-action@v6
         with:
           version: v1.59
+          # Эта команда скажет линтеру использовать ваш go.mod как есть,
+          # что должно решить проблему с undefined, если вы добавили 'replace'.
+          args: --build-tags=integration
 
       - name: Run integration tests
-        # Передаем переменные окружения для подключения к тестовой БД
-        # Вместо пароля в открытом виде используйте GitHub Secrets!
-        run: |
-          export DB_HOST=localhost
-          export DB_PORT=5432
-          export DB_USERNAME=testuser
-          export DB_DATABASE=testdb
-          export DB_SSLMODE=disable
-          export DB_PASSWORD=${{ secrets.DB_TEST_PASSWORD }}
-          go test -v --tags=integration ./... # Запускаем тесты с тегом integration
+        # Передаем переменные для Redis тоже
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USERNAME: testuser
+          DB_DATABASE: testdb
+          DB_SSLMODE: disable
+          DB_PASSWORD: testpassword # Используйте тот же пароль, что и для сервиса
+          REDIS_ADDR: localhost:6379
+          REDIS_PASSWORD: ""
+          REDIS_DB: 0
+        run: go test -v --tags=integration ./...
 
       - name: Build application
         run: go build -v -o myapp ./cmd/main.go
