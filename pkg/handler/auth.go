@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/ChadaevArtem/rest-go-for-vue"
+	"github.com/ArtemChadaev/go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -42,7 +42,6 @@ func (h *Handler) signIn(c *gin.Context) {
 		handleError(c, err)
 		return
 	}
-
 
 	c.JSON(http.StatusOK, tokens)
 }

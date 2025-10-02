@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"github.com/ChadaevArtem/rest-go-for-vue"
+	"github.com/ArtemChadaev/go"
 	"github.com/jmoiron/sqlx"
 )
 
