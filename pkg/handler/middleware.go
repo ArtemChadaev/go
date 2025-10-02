@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ChadaevArtem/rest-go-for-vue"
+	"github.com/ArtemChadaev/go"
 	"github.com/gin-gonic/gin"
 )
 

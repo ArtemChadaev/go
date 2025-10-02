@@ -3,10 +3,10 @@ package main
 import (
 	"os"
 
-	"github.com/ChadaevArtem/rest-go-for-vue"
-	"github.com/ChadaevArtem/rest-go-for-vue/pkg/handler"
-	"github.com/ChadaevArtem/rest-go-for-vue/pkg/repository"
-	"github.com/ChadaevArtem/rest-go-for-vue/pkg/service"
+	"github.com/ArtemChadaev/go"
+	"github.com/ArtemChadaev/go/pkg/handler"
+	"github.com/ArtemChadaev/go/pkg/repository"
+	"github.com/ArtemChadaev/go/pkg/service"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"

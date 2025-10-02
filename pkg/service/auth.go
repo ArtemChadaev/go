@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ChadaevArtem/rest-go-for-vue"
-	"github.com/ChadaevArtem/rest-go-for-vue/pkg/repository"
+	"github.com/ArtemChadaev/go"
+	"github.com/ArtemChadaev/go/pkg/repository"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/lib/pq"
 )
