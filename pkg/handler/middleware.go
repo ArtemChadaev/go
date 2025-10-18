@@ -36,7 +36,7 @@ func (h *Handler) userIdentify(c *gin.Context) {
 		return
 	}
 
-	userId, err := h.services.Autorization.ParseToken(headerParts[1])
+	userId, err := h.services.ParseToken(headerParts[1])
 	if err != nil {
 		handleError(c, err) // Сервис уже вернет правильный rest.ErrInvalidToken
 		return

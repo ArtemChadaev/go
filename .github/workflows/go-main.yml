@@ -34,15 +34,15 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: '1.25.1'
 
       - name: Install dependencies
         run: go mod download
 
       - name: Run linter
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
-          version: v1.59
+          version: v2.5.0
 
       - name: Run integration tests
         # Передаем переменные окружения для подключения к тестовой БД

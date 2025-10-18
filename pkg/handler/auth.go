@@ -15,7 +15,7 @@ func (h *Handler) signUp(c *gin.Context) {
 		return
 	}
 
-	_, err := h.services.Autorization.CreateUser(input)
+	_, err := h.services.CreateUser(input)
 	if err != nil {
 		handleError(c, err)
 		return
@@ -37,7 +37,7 @@ func (h *Handler) signIn(c *gin.Context) {
 		return
 	}
 
-	tokens, err := h.services.Autorization.GenerateTokens(input.Email, input.Password)
+	tokens, err := h.services.GenerateTokens(input.Email, input.Password)
 	if err != nil {
 		handleError(c, err)
 		return
