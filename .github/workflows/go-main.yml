@@ -4,23 +4,24 @@ name: Main CI/CD
 on:
   push:
     branches: [ "main" ] # Запускаем только для ветки main
+  pull_request:
+    branches: [ "main" ] # ДОБАВЛЕНО: Запускаем на Pull Request в main
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
     # Подключаем сервисы, которые будут доступны во время выполнения шагов
-    # В данном случае, это PostgreSQL
     services:
       postgres:
         image: postgres:13
         env:
+          # ЛУЧШАЯ ПРАКТИКА: Пароль берется из секретов
           POSTGRES_USER: testuser
-          POSTGRES_PASSWORD: testpassword
+          POSTGRES_PASSWORD: ${{ secrets.DB_TEST_PASSWORD }}
           POSTGRES_DB: testdb
         ports:
           - 5432:5432
-        # Проверка здоровья контейнера. CI не начнет тесты, пока база не будет готова
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -28,33 +29,68 @@ jobs:
           --health-retries 5
 
     steps:
+      # 1. Получаем исходный код из репозитория
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2. Устанавливаем нужную версию Go
+      # (Как в dev, с правильным кэшированием)
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: '1.25.1'
+          cache-dependency-path: go.sum
 
-      - name: Install dependencies
-        run: go mod download
-
+      # 3. Проверяем код на стиль и возможные ошибки
       - name: Run linter
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
-          version: v1.59
+          version: v2.5.0
 
+      # 4. Запускаем юнит-тесты (Быстрая проверка)
+      - name: Run unit tests
+        run: go test -v ./...
+
+      # 5. Запускаем интеграционные тесты (Медленная проверка с БД)
       - name: Run integration tests
-        # Передаем переменные окружения для подключения к тестовой БД
-        # Вместо пароля в открытом виде используйте GitHub Secrets!
-        run: |
-          export DB_HOST=localhost
-          export DB_PORT=5432
-          export DB_USERNAME=testuser
-          export DB_DATABASE=testdb
-          export DB_SSLMODE=disable
-          export DB_PASSWORD=${{ secrets.DB_TEST_PASSWORD }}
-          go test -v --tags=integration ./... # Запускаем тесты с тегом integration
+        env:
+          DB_HOST: localhost # Сервис 'postgres' доступен по localhost
+          DB_PORT: 5432
+          DB_USERNAME: testuser
+          DB_DATABASE: testdb
+          DB_SSLMODE: disable
+          DB_PASSWORD: ${{ secrets.DB_TEST_PASSWORD }}
+        run: go test -v --tags=integration ./...
 
+      # 6. Собираем приложение
       - name: Build application
-        run: go build -v -o myapp ./cmd/main.go
+        run: go build -v -o app ./cmd/main.go
+
+      # 7. Проверяем Dockerfile
+      - name: Run Dockerfile linter (hadolint)
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: ./Dockerfile
+
+      # --- ЭТО ШАГИ ДЛЯ CD (Continuous Deployment) ---
+
+      # 8. Логинимся в Docker Hub
+      # (Нужно, чтобы опубликовать твой образ)
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push' # Публикуем, только если это PUSH в main
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 9. Собираем и публикуем Docker-образ
+      - name: Build and push Docker image
+        if: github.event_name == 'push' # Публикуем, только если это PUSH в main
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true # Говорим, что надо опубликовать (push)
+          tags: | # Даем образу два тега
+            ${{ secrets.DOCKERHUB_USERNAME }}/go:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/go:${{ github.sha }}

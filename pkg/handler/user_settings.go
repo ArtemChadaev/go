@@ -36,7 +36,7 @@ func (h *Handler) getMySettings(c *gin.Context) {
 	}
 
 	// 2. Используем полученный userId для вызова метода сервиса
-	settings, err := h.services.UserSettings.GetByUserID(userId)
+	settings, err := h.services.GetByUserID(userId)
 	if err != nil {
 		handleError(c, err)
 		return
@@ -93,7 +93,7 @@ func (h *Handler) setNameIcon(c *gin.Context) {
 	}
 
 	// 3. Вызываем сервис для обновления данных
-	if err := h.services.UserSettings.UpdateInfo(userId, newName, iconUrl); err != nil {
+	if err := h.services.UpdateInfo(userId, newName, iconUrl); err != nil {
 		handleError(c, err)
 		return
 	}

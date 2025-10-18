@@ -16,11 +16,11 @@ import (
 func main() {
 	logrus.SetFormatter(new(logrus.JSONFormatter))
 	if err := initConfig(); err != nil {
-		logrus.Fatalf(err.Error())
+		logrus.Fatalf("%s", err.Error())
 	}
 
 	if err := godotenv.Load(); err != nil {
-		logrus.Fatalf(err.Error())
+		logrus.Fatalf("%s", err.Error())
 	}
 	db, err := repository.NewPostgresDB(repository.PostgresConfig{
 		Host:     viper.GetString("db.host"),
