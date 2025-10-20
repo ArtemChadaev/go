@@ -98,4 +98,3 @@ jobs:
           tags: |
             ghcr.io/artemchadaev/go:latest
             ghcr.io/artemchadaev/go:${{ github.sha }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/go:${{ github.sha }}
