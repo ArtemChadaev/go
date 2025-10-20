@@ -87,7 +87,14 @@ jobs:
           username: ${{ github.actor }} # Это твой логин на GitHub
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 9. Собираем и публикуем Docker-образ
+      # 9. Создаем переменную с именем в нижнем регистре
+      # (ЭТОТ НОВЫЙ ШАГ РЕШАЕТ ПРОБЛЕМУ)
+      - name: Set repository name to lowercase
+        id: lower-repo
+        run: echo "repository=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
+
+      # 10. Собираем и публикуем Docker-образ
+      # (Этот шаг теперь использует 'steps.lower-repo.outputs.repository')
       - name: Build and push Docker image
         if: github.event_name == 'push'
         uses: docker/build-push-action@v6
@@ -96,6 +103,6 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ toLower(github.repository) }}:latest
-            ghcr.io/${{ toLower(github.repository) }}:${{ github.sha }}
+            ghcr.io/${{ steps.lower-repo.outputs.repository }}:latest
+            ghcr.io/${{ steps.lower-repo.outputs.repository }}:${{ github.sha }}
             ${{ secrets.DOCKERHUB_USERNAME }}/go:${{ github.sha }}
