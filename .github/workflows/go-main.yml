@@ -10,7 +10,10 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-
+    
+  permissions:
+    contents: read
+    packages: write
     # Подключаем сервисы, которые будут доступны во время выполнения шагов
     services:
       postgres:
@@ -76,21 +79,23 @@ jobs:
 
       # 8. Логинимся в Docker Hub
       # (Нужно, чтобы опубликовать твой образ)
-      - name: Log in to Docker Hub
-        if: github.event_name == 'push' # Публикуем, только если это PUSH в main
+      - name: Log in to GitHub Container Registry
+        if: github.event_name == 'push'
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }} # Это твой логин на GitHub
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       # 9. Собираем и публикуем Docker-образ
       - name: Build and push Docker image
-        if: github.event_name == 'push' # Публикуем, только если это PUSH в main
+        if: github.event_name == 'push'
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
-          push: true # Говорим, что надо опубликовать (push)
-          tags: | # Даем образу два тега
-            ${{ secrets.DOCKERHUB_USERNAME }}/go:latest
+          push: true
+          tags: | # МЕНЯЕМ ТЕГИ
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
             ${{ secrets.DOCKERHUB_USERNAME }}/go:${{ github.sha }}
