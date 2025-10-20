@@ -95,7 +95,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: | # МЕНЯЕМ ТЕГИ
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          tags: |
+            ghcr.io/${{ github.repository,, }}:latest
+            ghcr.io/${{ github.repository,, }}:${{ github.sha }}
             ${{ secrets.DOCKERHUB_USERNAME }}/go:${{ github.sha }}
