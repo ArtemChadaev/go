@@ -4,9 +4,9 @@ import (
 	"os"
 
 	"github.com/ArtemChadaev/go"
-	"github.com/ArtemChadaev/go/pkg/handler"
-	"github.com/ArtemChadaev/go/pkg/repository"
+	"github.com/ArtemChadaev/go/pkg/api"
 	"github.com/ArtemChadaev/go/pkg/service"
+	"github.com/ArtemChadaev/go/pkg/storage"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
@@ -22,7 +22,7 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		logrus.Fatalf("%s", err.Error())
 	}
-	db, err := repository.NewPostgresDB(repository.PostgresConfig{
+	db, err := storage.NewPostgresDB(storage.PostgresConfig{
 		Host:     viper.GetString("db.host"),
 		Port:     viper.GetString("db.port"),
 		Username: viper.GetString("db.username"),
@@ -33,7 +33,7 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("%s", err.Error())
 	}
-	redis, err := repository.NewRedisClient(repository.RedisConfig{
+	redis, err := storage.NewRedisClient(storage.RedisConfig{
 		Addr:     viper.GetString("redis.addr"),
 		Password: os.Getenv("REDIS_PASSWORD"),
 		DB:       viper.GetInt("redis.db"),
@@ -41,9 +41,9 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("%s", err.Error())
 	}
-	repos := repository.NewRepository(db)
+	repos := storage.NewRepository(db)
 	services := service.NewService(repos, redis)
-	handlers := handler.NewHandler(services, redis)
+	handlers := api.NewHandler(services, redis)
 
 	srv := new(rest.Server)
 	if err := srv.Run(viper.GetString("port"), handlers.InitRoutes()); err != nil {

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/ArtemChadaev/go"
-	"github.com/ArtemChadaev/go/pkg/repository"
+	"github.com/ArtemChadaev/go/pkg/storage"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 )
@@ -24,11 +24,11 @@ const (
 )
 
 type UserSettingsService struct {
-	repo  repository.UserSettings
+	repo  storage.UserSettings
 	redis *redis.Client
 }
 
-func NewUserSettingsService(repo repository.UserSettings, redis *redis.Client) *UserSettingsService {
+func NewUserSettingsService(repo storage.UserSettings, redis *redis.Client) *UserSettingsService {
 	service := &UserSettingsService{
 		repo:  repo,
 		redis: redis,

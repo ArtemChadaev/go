@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # 1. Получаем исходный код из репозитория
-      - name: Checkout repository
+      - name: Checkout storage
         uses: actions/checkout@v4
 
       # 2. Устанавливаем нужную версию Go

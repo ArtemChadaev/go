@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/ArtemChadaev/go"
-	"github.com/ArtemChadaev/go/pkg/repository"
+	"github.com/ArtemChadaev/go/pkg/storage"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -27,7 +27,7 @@ type Service struct {
 	UserSettings
 }
 
-func NewService(repos *repository.Repository, redis *redis.Client) *Service {
+func NewService(repos *storage.Repository, redis *redis.Client) *Service {
 	userSettingsService := NewUserSettingsService(repos.UserSettings, redis)
 
 	authService := NewAuthService(repos.Autorization, userSettingsService)

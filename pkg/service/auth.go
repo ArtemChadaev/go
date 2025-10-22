@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/ArtemChadaev/go"
-	"github.com/ArtemChadaev/go/pkg/repository"
+	"github.com/ArtemChadaev/go/pkg/storage"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/lib/pq"
 )
@@ -35,11 +35,11 @@ type tokenClaims struct {
 }
 
 type AuthService struct {
-	repo            repository.Autorization
+	repo            storage.Autorization
 	settingsService UserSettings
 }
 
-func NewAuthService(repo repository.Autorization, settingsService UserSettings) *AuthService {
+func NewAuthService(repo storage.Autorization, settingsService UserSettings) *AuthService {
 	return &AuthService{
 		repo:            repo,
 		settingsService: settingsService,
