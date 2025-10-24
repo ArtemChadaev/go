@@ -50,7 +50,7 @@ func (h *Handler) updateToken(c *gin.Context) {
 	var input models.ResponseTokens
 
 	if err := c.BindJSON(&input); err != nil {
-		handleError(c, models.NewInvalidRequestError(err))к
+		handleError(c, models.NewInvalidRequestError(err))
 		return
 	}
 
