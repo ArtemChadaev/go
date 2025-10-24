@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ArtemChadaev/go"
+	"github.com/ArtemChadaev/go/pkg/models"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,13 +26,13 @@ const (
 func (h *Handler) userIdentify(c *gin.Context) {
 	header := c.GetHeader(autorizationHeader)
 	if header == "" {
-		handleError(c, rest.ErrInvalidToken)
+		handleError(c, models.ErrInvalidToken)
 		return
 	}
 
 	headerParts := strings.Split(header, " ")
 	if len(headerParts) != 2 {
-		handleError(c, rest.ErrInvalidToken)
+		handleError(c, models.ErrInvalidToken)
 		return
 	}
 
@@ -82,7 +82,7 @@ func (h *Handler) rateLimiter(c *gin.Context) {
 
 	// 4. Проверяем лимит
 	if count > rateLimitPerMinute {
-		handleError(c, rest.ErrTooManyRequestsByAccessToken)
+		handleError(c, models.ErrTooManyRequestsByAccessToken)
 		c.Abort() // Важно остановить дальнейшую обработку
 		return
 	}
@@ -114,7 +114,7 @@ func (h *Handler) authRateLimiter(c *gin.Context) {
 
 	// 3. Проверяем лимит
 	if count > authRateLimitPerMinute {
-		handleError(c, rest.ErrTooManyRequestsByIp)
+		handleError(c, models.ErrTooManyRequestsByIp)
 		c.Abort()
 		return
 	}

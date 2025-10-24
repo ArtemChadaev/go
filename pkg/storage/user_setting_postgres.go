@@ -3,7 +3,7 @@ package storage
 import (
 	"time"
 
-	"github.com/ArtemChadaev/go"
+	"github.com/ArtemChadaev/go/pkg/models"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -15,20 +15,20 @@ func NewUserSettingsPostgres(db *sqlx.DB) *UserSettingsRepository {
 	return &UserSettingsRepository{db: db}
 }
 
-func (r *UserSettingsRepository) CreateUserSettings(settings rest.UserSettings) error {
+func (r *UserSettingsRepository) CreateUserSettings(settings models.UserSettings) error {
 	query := "INSERT INTO user_settings (user_id, name) VALUES ($1, $2)"
 	_, err := r.db.Exec(query, settings.UserID, settings.Name)
 	return err
 }
 
-func (r *UserSettingsRepository) GetUserSettings(userId int) (rest.UserSettings, error) {
-	var settings rest.UserSettings
+func (r *UserSettingsRepository) GetUserSettings(userId int) (models.UserSettings, error) {
+	var settings models.UserSettings
 	query := "SELECT * FROM user_settings WHERE user_id=$1"
 	err := r.db.Get(&settings, query, userId)
 	return settings, err
 }
 
-func (r *UserSettingsRepository) UpdateUserSettings(settings rest.UserSettings) error {
+func (r *UserSettingsRepository) UpdateUserSettings(settings models.UserSettings) error {
 	query := "UPDATE user_settings SET name=$1, icon=$2 WHERE user_id=$3"
 	_, err := r.db.Exec(query, settings.Name, settings.Icon, settings.UserID)
 	return err

@@ -3,27 +3,27 @@ package storage
 import (
 	"time"
 
-	"github.com/ArtemChadaev/go"
+	"github.com/ArtemChadaev/go/pkg/models"
 	"github.com/jmoiron/sqlx"
 )
 
 type Autorization interface {
-	CreateUser(user rest.User) (int, error)
+	CreateUser(user models.User) (int, error)
 	GetUser(username, password string) (int, error)
 	GetUserEmailFromId(id int) (string, error)
-	UpdateUserPassword(user rest.User) error
+	UpdateUserPassword(user models.User) error
 	GetUserIdByRefreshToken(refreshToken string) (int, error)
-	CreateToken(refreshToken rest.RefreshToken) error
-	GetRefreshToken(refreshToken string) (rest.RefreshToken, error)
-	UpdateToken(oldRefreshToken string, refreshToken rest.RefreshToken) error
+	CreateToken(refreshToken models.RefreshToken) error
+	GetRefreshToken(refreshToken string) (models.RefreshToken, error)
+	UpdateToken(oldRefreshToken string, refreshToken models.RefreshToken) error
 	DeleteRefreshToken(tokenId int) error
 	DeleteAllUserRefreshTokens(userId int) error
-	GetRefreshTokens(userId int) ([]rest.RefreshToken, error)
+	GetRefreshTokens(userId int) ([]models.RefreshToken, error)
 }
 type UserSettings interface {
-	CreateUserSettings(settings rest.UserSettings) error
-	GetUserSettings(userId int) (rest.UserSettings, error)
-	UpdateUserSettings(settings rest.UserSettings) error
+	CreateUserSettings(settings models.UserSettings) error
+	GetUserSettings(userId int) (models.UserSettings, error)
+	UpdateUserSettings(settings models.UserSettings) error
 	UpdateUserCoin(userId int, coin int) error
 	BuyPaidSubscription(userId int, time time.Time) error
 	DeactivateExpiredSubscriptions() (int64, error)

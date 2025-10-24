@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ArtemChadaev/go"
+	"github.com/ArtemChadaev/go/pkg/models"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
@@ -18,7 +18,7 @@ type OauthError struct {
 
 // handleError обрабатывает любую ошибку, пришедшую из слоев ниже.
 func handleError(c *gin.Context, err error) {
-	var appErr *rest.AppError
+	var appErr *models.AppError
 
 	// Проверяем, является ли ошибка нашей кастомной AppError.
 	if errors.As(err, &appErr) {

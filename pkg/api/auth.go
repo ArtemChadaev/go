@@ -3,15 +3,15 @@ package api
 import (
 	"net/http"
 
-	"github.com/ArtemChadaev/go"
+	"github.com/ArtemChadaev/go/pkg/models"
 	"github.com/gin-gonic/gin"
 )
 
 func (h *Handler) signUp(c *gin.Context) {
-	var input rest.User
+	var input models.User
 
 	if err := c.BindJSON(&input); err != nil {
-		handleError(c, rest.NewInvalidRequestError(err))
+		handleError(c, models.NewInvalidRequestError(err))
 		return
 	}
 
@@ -30,10 +30,10 @@ func (h *Handler) signUp(c *gin.Context) {
 }
 
 func (h *Handler) signIn(c *gin.Context) {
-	var input rest.User
+	var input models.User
 
 	if err := c.BindJSON(&input); err != nil {
-		handleError(c, rest.NewInvalidRequestError(err))
+		handleError(c, models.NewInvalidRequestError(err))
 		return
 	}
 
@@ -47,10 +47,10 @@ func (h *Handler) signIn(c *gin.Context) {
 }
 
 func (h *Handler) updateToken(c *gin.Context) {
-	var input rest.ResponseTokens
+	var input models.ResponseTokens
 
 	if err := c.BindJSON(&input); err != nil {
-		handleError(c, rest.NewInvalidRequestError(err))
+		handleError(c, models.NewInvalidRequestError(err))к
 		return
 	}
 

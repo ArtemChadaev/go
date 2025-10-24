@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/ArtemChadaev/go"
+	"github.com/ArtemChadaev/go/pkg/models"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -15,12 +15,12 @@ import (
 func getUserID(c *gin.Context) (int, error) {
 	id, ok := c.Get(userCtx)
 	if !ok {
-		return 0, rest.ErrInvalidToken
+		return 0, models.ErrInvalidToken
 	}
 
 	idInt, ok := id.(int)
 	if !ok {
-		return 0, rest.ErrInvalidToken
+		return 0, models.ErrInvalidToken
 	}
 
 	return idInt, nil
@@ -58,7 +58,7 @@ func (h *Handler) setNameIcon(c *gin.Context) {
 	// c.PostForm() извлечет значение поля "name" из multipart-формы
 	newName := c.PostForm("name")
 	if newName == "" {
-		handleError(c, &rest.AppError{
+		handleError(c, &models.AppError{
 			HTTPStatus: http.StatusBadRequest,
 			Code:       "bad_request",
 			Message:    "Поле 'name' не может быть пустым.",
@@ -81,14 +81,14 @@ func (h *Handler) setNameIcon(c *gin.Context) {
 		// Сохраняем файл
 		savePath := filepath.Join("static", "icons", uniqueFilename)
 		if err := c.SaveUploadedFile(file, savePath); err != nil {
-			handleError(c, rest.ErrFailedSaveImg)
+			handleError(c, models.ErrFailedSaveImg)
 			return
 		}
 		// Формируем URL для сохранения в БД
 		iconUrl = "/static/icons/" + uniqueFilename
 	} else if errors.Is(err, http.ErrMissingFile) {
 		// Если ошибка - это НЕ "файл отсутствует", значит произошла другая проблема.
-		handleError(c, rest.NewInternalServerError(err))
+		handleError(c, models.NewInternalServerError(err))
 		return
 	}
 

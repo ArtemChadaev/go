@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"github.com/ArtemChadaev/go"
+	"github.com/ArtemChadaev/go/pkg/models"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -13,7 +13,7 @@ func NewAuthPostgres(db *sqlx.DB) *AuthRepository {
 	return &AuthRepository{db: db}
 }
 
-func (r *AuthRepository) CreateUser(user rest.User) (int, error) {
+func (r *AuthRepository) CreateUser(user models.User) (int, error) {
 	var id int
 	query := "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id"
 	row := r.db.QueryRow(query, user.Email, user.Password)
@@ -41,7 +41,7 @@ func (r *AuthRepository) GetUserEmailFromId(id int) (string, error) {
 	return userEmail, err
 }
 
-func (r *AuthRepository) UpdateUserPassword(user rest.User) error {
+func (r *AuthRepository) UpdateUserPassword(user models.User) error {
 	query := "UPDATE users SET password_hash=$1 WHERE id=$2"
 	_, err := r.db.Exec(query, user.Password, user.ID)
 	return err
@@ -57,20 +57,20 @@ func (r *AuthRepository) GetUserIdByRefreshToken(refreshToken string) (int, erro
 	return userId, err
 }
 
-func (r *AuthRepository) CreateToken(refreshToken rest.RefreshToken) error {
+func (r *AuthRepository) CreateToken(refreshToken models.RefreshToken) error {
 	query := "INSERT INTO user_refresh_tokens (user_id, token, expires_at, name_device, device_info) VALUES ($1, $2, $3, $4, $5)"
 	_, err := r.db.Exec(query, refreshToken.UserID, refreshToken.Token, refreshToken.ExpiresAt, refreshToken.NameDevice, refreshToken.DeviceInfo)
 	return err
 }
 
-func (r *AuthRepository) GetRefreshToken(refreshToken string) (rest.RefreshToken, error) {
-	var refresh rest.RefreshToken
+func (r *AuthRepository) GetRefreshToken(refreshToken string) (models.RefreshToken, error) {
+	var refresh models.RefreshToken
 	query := "SELECT * FROM user_refresh_tokens WHERE token=$1"
 	err := r.db.Get(&refresh, query, refreshToken)
 	return refresh, err
 }
 
-func (r *AuthRepository) UpdateToken(oldRefreshToken string, refreshToken rest.RefreshToken) error {
+func (r *AuthRepository) UpdateToken(oldRefreshToken string, refreshToken models.RefreshToken) error {
 	query := "UPDATE user_refresh_tokens SET token=$1, expires_at=$2, name_device=$3, device_info=$4 WHERE token=$5"
 	_, err := r.db.Exec(query, refreshToken.Token, refreshToken.ExpiresAt, refreshToken.NameDevice, refreshToken.DeviceInfo, oldRefreshToken)
 	return err
@@ -88,8 +88,8 @@ func (r *AuthRepository) DeleteAllUserRefreshTokens(userId int) error {
 	return err
 }
 
-func (r *AuthRepository) GetRefreshTokens(userId int) ([]rest.RefreshToken, error) {
-	var refresh []rest.RefreshToken
+func (r *AuthRepository) GetRefreshTokens(userId int) ([]models.RefreshToken, error) {
+	var refresh []models.RefreshToken
 	query := "SELECT * FROM user_refresh_tokens WHERE user_id=$1"
 	err := r.db.Select(&refresh, query, userId)
 	return refresh, err

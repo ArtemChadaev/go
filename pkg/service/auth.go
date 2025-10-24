@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ArtemChadaev/go"
+	"github.com/ArtemChadaev/go/pkg/models"
 	"github.com/ArtemChadaev/go/pkg/storage"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/lib/pq"
@@ -62,13 +62,13 @@ func generateRefreshToken() (string, error) {
 	return base64.URLEncoding.EncodeToString(tokenBytes), nil
 }
 
-func GenerateRefresh(userId int) (refresh rest.RefreshToken, err error) {
+func GenerateRefresh(userId int) (refresh models.RefreshToken, err error) {
 	// TODO: Сделать user-agent точнее название и описание девайса входа
 	refreshToken, err := generateRefreshToken()
 	if err != nil {
 		return
 	}
-	refresh = rest.RefreshToken{
+	refresh = models.RefreshToken{
 		UserID:     userId,
 		Token:      refreshToken,
 		ExpiresAt:  time.Now().Add(refreshTokenTTL),
@@ -78,31 +78,31 @@ func GenerateRefresh(userId int) (refresh rest.RefreshToken, err error) {
 	return
 }
 
-func (s *AuthService) CreateUser(user rest.User) (int, error) {
+func (s *AuthService) CreateUser(user models.User) (int, error) {
 	user.Password = generatePasswordHash(user.Password)
 	id, err := s.repo.CreateUser(user)
 	if err != nil {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
-			return 0, rest.ErrUserAlreadyExists
+			return 0, models.ErrUserAlreadyExists
 		}
-		return 0, rest.NewInternalServerError(err)
+		return 0, models.NewInternalServerError(err)
 	}
 	if err := s.settingsService.CreateInitialUserSettings(id, strings.Split(user.Email, "@")[0]); err != nil {
-		return 0, rest.NewInternalServerError(err)
+		return 0, models.NewInternalServerError(err)
 	}
 	return id, nil
 }
 
-func (s *AuthService) GenerateTokens(email, password string) (tokens rest.ResponseTokens, err error) {
+func (s *AuthService) GenerateTokens(email, password string) (tokens models.ResponseTokens, err error) {
 	userId, err := s.repo.GetUser(email, generatePasswordHash(password))
 	if err != nil {
 		// Если пользователь не найден - это ошибка неверных учетных данных.
 		if errors.Is(err, sql.ErrNoRows) {
-			return tokens, rest.ErrInvalidCredentials
+			return tokens, models.ErrInvalidCredentials
 		}
 		// Иначе - внутренняя ошибка.
-		return tokens, rest.NewInternalServerError(err)
+		return tokens, models.NewInternalServerError(err)
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
@@ -115,38 +115,38 @@ func (s *AuthService) GenerateTokens(email, password string) (tokens rest.Respon
 
 	accessToken, err := token.SignedString([]byte(signingKey))
 	if err != nil {
-		return tokens, rest.NewInternalServerError(err)
+		return tokens, models.NewInternalServerError(err)
 	}
 
 	refresh, err := GenerateRefresh(userId)
 	if err != nil {
-		return tokens, rest.NewInternalServerError(err)
+		return tokens, models.NewInternalServerError(err)
 	}
 
 	if err = s.repo.CreateToken(refresh); err != nil {
-		return tokens, rest.NewInternalServerError(err)
+		return tokens, models.NewInternalServerError(err)
 	}
 
-	tokens = rest.ResponseTokens{
+	tokens = models.ResponseTokens{
 		AccessToken:  accessToken,
 		RefreshToken: refresh.Token,
 	}
 	return
 }
 
-func (s *AuthService) GetAccessToken(refreshToken string) (tokens rest.ResponseTokens, err error) {
+func (s *AuthService) GetAccessToken(refreshToken string) (tokens models.ResponseTokens, err error) {
 
 	refresh, err := s.repo.GetRefreshToken(refreshToken)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return tokens, rest.ErrInvalidToken
+			return tokens, models.ErrInvalidToken
 		}
-		return tokens, rest.NewInternalServerError(err)
+		return tokens, models.NewInternalServerError(err)
 	}
 
 	if time.Now().After(refresh.ExpiresAt) {
 		_ = s.repo.DeleteRefreshToken(refresh.ID) // Удаляем "мусор" из БД
-		return tokens, rest.ErrInvalidToken
+		return tokens, models.ErrInvalidToken
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
@@ -159,22 +159,22 @@ func (s *AuthService) GetAccessToken(refreshToken string) (tokens rest.ResponseT
 
 	accessToken, err := token.SignedString([]byte(signingKey))
 	if err != nil {
-		return tokens, rest.NewInternalServerError(err)
+		return tokens, models.NewInternalServerError(err)
 	}
 
 	if refresh.ExpiresAt.Before(time.Now().Add(updateRefreshTokenTTL)) {
 		newRefresh, err := GenerateRefresh(refresh.UserID)
 		if err != nil {
-			return tokens, rest.NewInternalServerError(err)
+			return tokens, models.NewInternalServerError(err)
 		}
 		err = s.repo.UpdateToken(refreshToken, newRefresh)
 		if err != nil {
-			return tokens, rest.NewInternalServerError(err)
+			return tokens, models.NewInternalServerError(err)
 		}
 		refresh.Token = newRefresh.Token
 	}
 
-	tokens = rest.ResponseTokens{
+	tokens = models.ResponseTokens{
 		AccessToken:  accessToken,
 		RefreshToken: refresh.Token,
 	}
@@ -190,12 +190,12 @@ func (s *AuthService) ParseToken(accessToken string) (int, error) {
 		return []byte(signingKey), nil
 	})
 	if err != nil {
-		return 0, rest.ErrInvalidToken
+		return 0, models.ErrInvalidToken
 	}
 	claims, ok := token.Claims.(*tokenClaims)
 
 	if !ok {
-		return 0, rest.ErrInvalidToken
+		return 0, models.ErrInvalidToken
 	}
 
 	return claims.UserId, nil

@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/ArtemChadaev/go"
 	"github.com/ArtemChadaev/go/pkg/api"
+	"github.com/ArtemChadaev/go/pkg/models"
 	"github.com/ArtemChadaev/go/pkg/service"
 	"github.com/ArtemChadaev/go/pkg/storage"
 	"github.com/joho/godotenv"
@@ -45,7 +45,7 @@ func main() {
 	services := service.NewService(repos, redis)
 	handlers := api.NewHandler(services, redis)
 
-	srv := new(rest.Server)
+	srv := new(models.Server)
 	if err := srv.Run(viper.GetString("port"), handlers.InitRoutes()); err != nil {
 		logrus.Fatalf("error http: %s", err.Error())
 	}

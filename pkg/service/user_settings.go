@@ -6,7 +6,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ArtemChadaev/go"
+	"github.com/ArtemChadaev/go/pkg/models"
 	"github.com/ArtemChadaev/go/pkg/storage"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
@@ -42,7 +42,7 @@ func NewUserSettingsService(repo storage.UserSettings, redis *redis.Client) *Use
 
 // CreateInitialUserSettings создает начальные настройки для нового пользователя используется в auth.
 func (s *UserSettingsService) CreateInitialUserSettings(userId int, name string) error {
-	settings := rest.UserSettings{
+	settings := models.UserSettings{
 		UserID:             userId,
 		Name:               name, // Используется часть email до @
 		DateOfRegistration: time.Now(),
@@ -51,13 +51,13 @@ func (s *UserSettingsService) CreateInitialUserSettings(userId int, name string)
 }
 
 // GetByUserID возвращает настройки пользователя по его ID.
-func (s *UserSettingsService) GetByUserID(userId int) (rest.UserSettings, error) {
+func (s *UserSettingsService) GetByUserID(userId int) (models.UserSettings, error) {
 	return s.repo.GetUserSettings(userId)
 }
 
 // UpdateInfo обновляет основную информацию пользователя (имя и иконку).
 func (s *UserSettingsService) UpdateInfo(userId int, name, icon string) error {
-	var settings rest.UserSettings
+	var settings models.UserSettings
 	settings, err := s.repo.GetUserSettings(userId)
 	if err != nil {
 		return err
@@ -75,14 +75,14 @@ func (s *UserSettingsService) ChangeCoins(userId, coin int) error {
 	settings, err := s.repo.GetUserSettings(userId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return rest.ErrUserNotFound
+			return models.ErrUserNotFound
 		}
 		return err
 	}
 
 	newBalance := settings.Coin + coin
 	if newBalance < 0 {
-		return rest.ErrNoCoins
+		return models.ErrNoCoins
 	}
 
 	return s.repo.UpdateUserCoin(userId, newBalance)
@@ -95,14 +95,14 @@ func (s *UserSettingsService) ActivateSubscription(userId, daysToAdd int, paymen
 	// В реальном проекте здесь была бы проверка токена через API платежной системы.
 	// Для pet-проекта мы просто сравниваем его с константой.
 	if paymentToken != mockPaymentToken {
-		return rest.ErrPaymentFailed
+		return models.ErrPaymentFailed
 	}
 
 	settings, err := s.repo.GetUserSettings(userId)
 	if err != nil {
 		// Если настроек нет (хотя должны быть), возвращаем ошибку
 		if errors.Is(err, sql.ErrNoRows) {
-			return rest.ErrUserNotFound
+			return models.ErrUserNotFound
 		}
 		return err
 	}
@@ -135,7 +135,7 @@ func (s *UserSettingsService) GetGrantDailyReward(userId int) error {
 
 	// Если ID не был добавлен (уже там был), значит награду получал.
 	if added == 0 {
-		return rest.ErrDayCoin // Награда уже получена сегодня
+		return models.ErrDayCoin // Награда уже получена сегодня
 	}
 
 	// Если ID был добавлен успешно, значит это первая выдача сегодня.
