@@ -6,12 +6,17 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-type Handler struct {
-	services *service.Service
-	redis    *redis.Client
+// RedisClient интерфейс для Redis клиента
+type RedisClient interface {
+	Pipeline() redis.Pipeliner
 }
 
-func NewHandler(services *service.Service, redis *redis.Client) *Handler {
+type Handler struct {
+	services *service.Service
+	redis    RedisClient
+}
+
+func NewHandler(services *service.Service, redis RedisClient) *Handler {
 	return &Handler{
 		services: services,
 		redis:    redis,
