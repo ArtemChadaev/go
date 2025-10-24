@@ -47,8 +47,8 @@ func SetupTestSuite(ctx context.Context) (*TestSuite, error) {
 	viper.Set("redis.db", 1)
 
 	// Запускаем PostgreSQL контейнер
-	postgresContainer, err := postgres.RunContainer(ctx,
-		testcontainers.WithImage("postgres:16-alpine"),
+	postgresContainer, err := postgres.Run(ctx,
+		"postgres:16-alpine",
 		postgres.WithDatabase("test_db"),
 		postgres.WithUsername("postgres"),
 		postgres.WithPassword("postgres"),
@@ -73,8 +73,8 @@ func SetupTestSuite(ctx context.Context) (*TestSuite, error) {
 	}
 
 	// Запускаем Redis контейнер
-	redisContainer, err := rediscontainer.RunContainer(ctx,
-		testcontainers.WithImage("redis:7-alpine"),
+	redisContainer, err := rediscontainer.Run(ctx,
+		"redis:7-alpine",
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("Ready to accept connections").
 				WithStartupTimeout(5*time.Second)),
@@ -221,6 +221,6 @@ func GetTestEnv() map[string]string {
 func SetTestEnv() {
 	env := GetTestEnv()
 	for key, value := range env {
-		os.Setenv(key, value)
+		_ = os.Setenv(key, value)
 	}
 }
